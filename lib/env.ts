@@ -1,4 +1,4 @@
-"use server";
+import "server-only";
 
 import { z } from "zod";
 
@@ -56,5 +56,3 @@ export const env = {
   },
   bucketName: config.AWS_S3_BUCKET_NAME,
 };
-
-export type { EnvConfig };
