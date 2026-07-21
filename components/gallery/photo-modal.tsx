@@ -103,7 +103,8 @@ export default function PhotoModal({
           onClick={handleFavoriteClick}
           aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
           aria-pressed={isFavorite}
-          className="absolute right-14 top-3 rounded-lg border border-slate-200 bg-white p-2 text-slate-700 shadow-sm transition hover:bg-slate-50"
+          className="fixed right-5 top-[calc(1rem+env(safe-area-inset-top))] z-70 flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-slate-700 shadow-lg transition hover:bg-slate-50 sm:absolute sm:right-14 sm:top-3 sm:h-10 sm:w-10 sm:rounded-lg sm:shadow-sm"
+          style={{ top: "calc(1rem + env(safe-area-inset-top))" }}
         >
           <svg
             viewBox="0 0 24 24"
