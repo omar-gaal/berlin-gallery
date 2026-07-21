@@ -1,15 +1,22 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { type MouseEvent, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import type { PhotoItem } from "@/lib/mock-photos";
 
 type PhotoModalProps = {
   photo: PhotoItem;
   onClose: () => void;
+  isFavorite: boolean;
+  onToggleFavorite: (photoId: string) => void;
 };
 
-export default function PhotoModal({ photo, onClose }: PhotoModalProps) {
+export default function PhotoModal({
+  photo,
+  onClose,
+  isFavorite,
+  onToggleFavorite,
+}: PhotoModalProps) {
   const [isVisible, setIsVisible] = useState(true);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
 
@@ -59,6 +66,11 @@ export default function PhotoModal({ photo, onClose }: PhotoModalProps) {
     window.setTimeout(() => onClose(), 160);
   };
 
+  const handleFavoriteClick = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    onToggleFavorite(photo.id);
+  };
+
   return (
     <div
       className={`fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-3 backdrop-blur-sm transition-opacity duration-200 sm:p-4 ${
@@ -86,7 +98,25 @@ export default function PhotoModal({ photo, onClose }: PhotoModalProps) {
           ×
         </button>
 
-        <div className="relative aspect-[3/4] w-full">
+        <button
+          type="button"
+          onClick={handleFavoriteClick}
+          aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+          aria-pressed={isFavorite}
+          className="absolute right-14 top-3 rounded-lg border border-slate-200 bg-white p-2 text-slate-700 shadow-sm transition hover:bg-slate-50"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            className={`h-5 w-5 ${isFavorite ? "fill-rose-500 text-rose-500" : "fill-none text-slate-700"}`}
+            stroke="currentColor"
+            strokeWidth="1.8"
+            aria-hidden="true"
+          >
+            <path d="M12 20s-6.5-4.1-8.9-7.3C1.2 10.2 2.1 6.7 5.2 5.5c1.7-.6 3.7-.1 5.1 1.2 1.4-1.3 3.4-1.8 5.1-1.2 3.1 1.2 4 4.7 2.1 7.2C18.5 15.9 12 20 12 20Z" />
+          </svg>
+        </button>
+
+        <div className="relative aspect-3/4 w-full">
           <Image
             src={photo.src}
             alt={photo.alt}
