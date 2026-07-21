@@ -48,7 +48,7 @@ export default function GalleryShell() {
           activeChip={activeChip}
           onSelectChip={setActiveChip}
         />
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto pb-24">
           <PhotoGrid
             photos={visiblePhotos}
             onOpen={(photo) => setOpenPhoto(photo.id)}
