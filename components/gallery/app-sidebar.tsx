@@ -7,7 +7,7 @@ export default function AppSidebar() {
   return (
     <aside className="flex h-screen flex-col border-r border-slate-200/50 bg-white px-6 py-8">
       <h1 className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-900">
-        Berlin Gallery
+        Brothers Abroad
       </h1>
       <nav className="mt-12 space-y-2" aria-label="Primary">
         {navItems.map((item) => (
