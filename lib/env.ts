@@ -13,6 +13,7 @@ import { z } from "zod";
  */
 
 const envSchema = z.object({
+  DATABASE_URL: z.string().url("DATABASE_URL must be a valid URL"),
   AWS_ENDPOINT_URL: z.string().url("AWS_ENDPOINT_URL must be a valid URL"),
   AWS_S3_BUCKET_NAME: z.string().min(1, "AWS_S3_BUCKET_NAME is required"),
   AWS_DEFAULT_REGION: z.string().min(1, "AWS_DEFAULT_REGION is required"),
@@ -48,6 +49,7 @@ function validateEnv(): EnvConfig {
 const config = validateEnv();
 
 export const env = {
+  databaseUrl: config.DATABASE_URL,
   aws: {
     endpointUrl: config.AWS_ENDPOINT_URL,
     region: config.AWS_DEFAULT_REGION,
