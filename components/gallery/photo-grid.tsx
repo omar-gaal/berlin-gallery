@@ -6,7 +6,7 @@ import PhotoCard from "@/components/gallery/photo-card";
 type PhotoGridProps = {
   photos: PhotoItem[];
   onOpen: (photo: PhotoItem) => void;
-  onToggleFavorite: (photoId: string) => void;
+  onToggleFavorite: (photoId: string, trigger: HTMLButtonElement) => void;
   emptyMessage?: string;
 };
 

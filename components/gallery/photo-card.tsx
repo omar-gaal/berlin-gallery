@@ -7,7 +7,7 @@ import type { PhotoItem } from "@/lib/mock-photos";
 type PhotoCardProps = {
   photo: PhotoItem;
   onOpen: (photo: PhotoItem) => void;
-  onToggleFavorite: (photoId: string) => void;
+  onToggleFavorite: (photoId: string, trigger: HTMLButtonElement) => void;
 };
 
 export default function PhotoCard({
@@ -17,7 +17,7 @@ export default function PhotoCard({
 }: PhotoCardProps) {
   const handleFavoriteClick = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
-    onToggleFavorite(photo.id);
+    onToggleFavorite(photo.id, event.currentTarget);
   };
 
   const handleCardKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {

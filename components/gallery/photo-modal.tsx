@@ -8,7 +8,7 @@ type PhotoModalProps = {
   photo: PhotoItem;
   onClose: () => void;
   isFavorite: boolean;
-  onToggleFavorite: (photoId: string) => void;
+  onToggleFavorite: (photoId: string, trigger: HTMLButtonElement) => void;
 };
 
 export default function PhotoModal({
@@ -68,7 +68,7 @@ export default function PhotoModal({
 
   const handleFavoriteClick = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
-    onToggleFavorite(photo.id);
+    onToggleFavorite(photo.id, event.currentTarget);
   };
 
   return (
