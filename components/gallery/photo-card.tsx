@@ -1,13 +1,13 @@
 "use client";
 
-import type { KeyboardEvent, MouseEvent } from "react";
+import { useState, type KeyboardEvent, type MouseEvent } from "react";
 import Image from "next/image";
-import type { PhotoItem } from "@/lib/mock-photos";
+import type { GalleryPhoto } from "@/lib/gallery-types";
 
 type PhotoCardProps = {
-  photo: PhotoItem;
-  onOpen: (photo: PhotoItem) => void;
-  onToggleFavorite: (photoId: string) => void;
+  photo: GalleryPhoto;
+  onOpen: (photo: GalleryPhoto) => void;
+  onToggleFavorite: (photoId: string, trigger: HTMLButtonElement) => void;
 };
 
 export default function PhotoCard({
@@ -15,9 +15,12 @@ export default function PhotoCard({
   onOpen,
   onToggleFavorite,
 }: PhotoCardProps) {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [hasImageError, setHasImageError] = useState(false);
+
   const handleFavoriteClick = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
-    onToggleFavorite(photo.id);
+    onToggleFavorite(photo.id, event.currentTarget);
   };
 
   const handleCardKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -39,13 +42,28 @@ export default function PhotoCard({
         style={{ aspectRatio: `${photo.width} / ${photo.height}` }}
         className="relative overflow-hidden bg-slate-100"
       >
-        <Image
-          src={photo.src}
-          alt={photo.alt}
-          fill
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          className="object-cover transition duration-300 group-hover:scale-105"
-        />
+        {!hasImageError ? (
+          <>
+            <Image
+              src={photo.src}
+              alt={photo.alt}
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              className={`object-cover transition duration-300 group-hover:scale-105 ${
+                isLoaded ? "opacity-100" : "opacity-0"
+              }`}
+              onLoad={() => setIsLoaded(true)}
+              onError={() => setHasImageError(true)}
+            />
+            {!isLoaded ? (
+              <div className="absolute inset-0 animate-pulse bg-slate-200" />
+            ) : null}
+          </>
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center px-3 text-center text-xs text-slate-500">
+            Image unavailable
+          </div>
+        )}
       </div>
 
       <button

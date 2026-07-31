@@ -7,7 +7,7 @@ const availableTags = ["Nature", "City", "Travel", "People", "Food"];
 
 type UploadModalProps = {
   onClose: () => void;
-  onUploadComplete: () => void;
+  onUploadComplete: () => void | Promise<void>;
 };
 
 type SelectedFile = {
@@ -17,13 +17,17 @@ type SelectedFile = {
   file: File;
 };
 
+const MAX_UPLOAD_SIZE_BYTES = 15 * 1024 * 1024;
+
 export default function UploadModal({
   onClose,
   onUploadComplete,
 }: UploadModalProps) {
-  const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedFile, setSelectedFile] = useState<SelectedFile | null>(null);
+  const [selectedTag, setSelectedTag] = useState<string>("");
   const [draftTag, setDraftTag] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -37,34 +41,49 @@ export default function UploadModal({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [onClose]);
 
+  useEffect(() => {
+    return () => {
+      if (selectedFile) {
+        URL.revokeObjectURL(selectedFile.previewUrl);
+      }
+    };
+  }, [selectedFile]);
+
   const handleFiles = (files: FileList | null) => {
-    if (!files) {
+    if (!files || files.length === 0) {
       return;
     }
 
-    const mapped = Array.from(files).map((file) => ({
+    const [file] = Array.from(files);
+
+    if (!file) {
+      return;
+    }
+
+    if (selectedFile) {
+      URL.revokeObjectURL(selectedFile.previewUrl);
+    }
+
+    setSelectedFile({
       id: `${file.name}-${file.lastModified}`,
       name: file.name,
       previewUrl: URL.createObjectURL(file),
       file,
-    }));
-
-    setSelectedFiles((current) => [...current, ...mapped]);
+    });
+    setErrorMessage(null);
   };
 
-  const removeFile = (id: string) => {
-    setSelectedFiles((current) => {
-      const next = current.filter((file) => file.id !== id);
-      return next;
-    });
+  const removeFile = () => {
+    if (selectedFile) {
+      URL.revokeObjectURL(selectedFile.previewUrl);
+    }
+
+    setSelectedFile(null);
   };
 
   const toggleTag = (tag: string) => {
-    setSelectedTags((current) =>
-      current.includes(tag)
-        ? current.filter((value) => value !== tag)
-        : [...current, tag],
-    );
+    setSelectedTag((current) => (current === tag ? "" : tag));
+    setErrorMessage(null);
   };
 
   const addDraftTag = () => {
@@ -74,18 +93,68 @@ export default function UploadModal({
     }
 
     const normalized = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
-    if (!selectedTags.includes(normalized)) {
-      setSelectedTags((current) => [...current, normalized]);
-    }
+    setSelectedTag(normalized);
     setDraftTag("");
+    setErrorMessage(null);
   };
 
-  const handleUpload = () => {
-    if (selectedFiles.length === 0) {
+  const handleUpload = async () => {
+    if (!selectedFile || isSubmitting) {
       return;
     }
 
-    onUploadComplete();
+    if (!selectedTag.trim()) {
+      setErrorMessage("Please choose a tag before uploading.");
+      return;
+    }
+
+    if (selectedFile.file.size <= 0) {
+      setErrorMessage("The selected file is empty.");
+      return;
+    }
+
+    if (selectedFile.file.size > MAX_UPLOAD_SIZE_BYTES) {
+      setErrorMessage("File is too large. Maximum size is 15 MB.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setErrorMessage(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("image", selectedFile.file);
+      formData.append("tag", selectedTag.trim());
+
+      const response = await fetch("/api/photos/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        let message = "Upload failed. Please try again.";
+
+        try {
+          const payload = (await response.json()) as { error?: string };
+          if (payload.error) {
+            message = payload.error;
+          }
+        } catch {
+          // Keep fallback message when response body is unavailable.
+        }
+
+        setErrorMessage(message);
+        return;
+      }
+
+      setSelectedFile(null);
+      setSelectedTag("");
+      setDraftTag("");
+      await onUploadComplete();
+      onClose();
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -97,7 +166,7 @@ export default function UploadModal({
               Upload photos
             </h2>
             <p className="mt-1 text-sm text-slate-500">
-              Select images and assign tags locally.
+              Select one image and one tag to upload.
             </p>
           </div>
           <button
@@ -118,14 +187,13 @@ export default function UploadModal({
             Drop files here or browse
           </span>
           <span className="text-sm text-slate-500">
-            PNG, JPG, WEBP up to your browser limits
+            PNG, JPG, WEBP up to 15 MB
           </span>
           <input
             id="photo-upload"
             ref={fileInputRef}
             type="file"
             accept="image/*"
-            multiple
             className="sr-only"
             onChange={(event) => handleFiles(event.target.files)}
           />
@@ -138,34 +206,34 @@ export default function UploadModal({
           </button>
         </label>
 
-        {selectedFiles.length > 0 ? (
+        {selectedFile ? (
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            {selectedFiles.map((file) => (
-              <div
-                key={file.id}
-                className="rounded-xl border border-slate-200 p-2"
-              >
-                <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-slate-100">
-                  <Image
-                    src={file.previewUrl}
-                    alt={file.name}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <div className="mt-2 flex items-center justify-between gap-2">
-                  <p className="truncate text-sm text-slate-700">{file.name}</p>
-                  <button
-                    type="button"
-                    onClick={() => removeFile(file.id)}
-                    className="text-sm text-slate-500 transition hover:text-slate-800"
-                    aria-label={`Remove ${file.name}`}
-                  >
-                    Remove
-                  </button>
-                </div>
+            <div
+              key={selectedFile.id}
+              className="rounded-xl border border-slate-200 p-2"
+            >
+              <div className="relative aspect-4/3 overflow-hidden rounded-lg bg-slate-100">
+                <Image
+                  src={selectedFile.previewUrl}
+                  alt={selectedFile.name}
+                  fill
+                  className="object-cover"
+                />
               </div>
-            ))}
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <p className="truncate text-sm text-slate-700">
+                  {selectedFile.name}
+                </p>
+                <button
+                  type="button"
+                  onClick={removeFile}
+                  className="text-sm text-slate-500 transition hover:text-slate-800"
+                  aria-label={`Remove ${selectedFile.name}`}
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
           </div>
         ) : null}
 
@@ -173,7 +241,7 @@ export default function UploadModal({
           <p className="text-sm font-medium text-slate-700">Tags</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {availableTags.map((tag) => {
-              const active = selectedTags.includes(tag);
+              const active = selectedTag === tag;
               return (
                 <button
                   key={tag}
@@ -209,6 +277,16 @@ export default function UploadModal({
           </button>
         </div>
 
+        {errorMessage ? (
+          <p
+            role="alert"
+            aria-live="polite"
+            className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700"
+          >
+            {errorMessage}
+          </p>
+        ) : null}
+
         <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <button
             type="button"
@@ -220,9 +298,10 @@ export default function UploadModal({
           <button
             type="button"
             onClick={handleUpload}
+            disabled={!selectedFile || isSubmitting}
             className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
           >
-            Upload
+            {isSubmitting ? "Uploading..." : "Upload"}
           </button>
         </div>
       </div>
