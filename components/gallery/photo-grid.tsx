@@ -1,11 +1,11 @@
 "use client";
 
-import type { PhotoItem } from "@/lib/mock-photos";
+import type { GalleryPhoto } from "@/lib/gallery-types";
 import PhotoCard from "@/components/gallery/photo-card";
 
 type PhotoGridProps = {
-  photos: PhotoItem[];
-  onOpen: (photo: PhotoItem) => void;
+  photos: GalleryPhoto[];
+  onOpen: (photo: GalleryPhoto) => void;
   onToggleFavorite: (photoId: string, trigger: HTMLButtonElement) => void;
   emptyMessage?: string;
 };

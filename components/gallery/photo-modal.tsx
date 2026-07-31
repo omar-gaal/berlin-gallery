@@ -2,10 +2,10 @@
 
 import { type MouseEvent, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import type { PhotoItem } from "@/lib/mock-photos";
+import type { GalleryPhoto } from "@/lib/gallery-types";
 
 type PhotoModalProps = {
-  photo: PhotoItem;
+  photo: GalleryPhoto;
   onClose: () => void;
   isFavorite: boolean;
   onToggleFavorite: (photoId: string, trigger: HTMLButtonElement) => void;
@@ -18,6 +18,8 @@ export default function PhotoModal({
   onToggleFavorite,
 }: PhotoModalProps) {
   const [isVisible, setIsVisible] = useState(true);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [hasImageError, setHasImageError] = useState(false);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
@@ -118,13 +120,28 @@ export default function PhotoModal({
         </button>
 
         <div className="relative aspect-3/4 w-full">
-          <Image
-            src={photo.src}
-            alt={photo.alt}
-            fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 60vw"
-            className="object-cover"
-          />
+          {!hasImageError ? (
+            <>
+              <Image
+                src={photo.src}
+                alt={photo.alt}
+                fill
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 60vw"
+                className={`object-cover transition-opacity duration-200 ${
+                  isLoaded ? "opacity-100" : "opacity-0"
+                }`}
+                onLoad={() => setIsLoaded(true)}
+                onError={() => setHasImageError(true)}
+              />
+              {!isLoaded ? (
+                <div className="absolute inset-0 animate-pulse bg-slate-200" />
+              ) : null}
+            </>
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center px-4 text-center text-sm text-slate-500">
+              Unable to load this photo.
+            </div>
+          )}
         </div>
       </div>
     </div>

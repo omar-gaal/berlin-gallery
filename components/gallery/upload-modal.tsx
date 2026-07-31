@@ -7,7 +7,7 @@ const availableTags = ["Nature", "City", "Travel", "People", "Food"];
 
 type UploadModalProps = {
   onClose: () => void;
-  onUploadComplete: () => void;
+  onUploadComplete: () => void | Promise<void>;
 };
 
 type SelectedFile = {
@@ -24,6 +24,7 @@ export default function UploadModal({
   const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [draftTag, setDraftTag] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -80,12 +81,18 @@ export default function UploadModal({
     setDraftTag("");
   };
 
-  const handleUpload = () => {
-    if (selectedFiles.length === 0) {
+  const handleUpload = async () => {
+    if (selectedFiles.length === 0 || isSubmitting) {
       return;
     }
 
-    onUploadComplete();
+    setIsSubmitting(true);
+
+    try {
+      await onUploadComplete();
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -145,7 +152,7 @@ export default function UploadModal({
                 key={file.id}
                 className="rounded-xl border border-slate-200 p-2"
               >
-                <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-slate-100">
+                <div className="relative aspect-4/3 overflow-hidden rounded-lg bg-slate-100">
                   <Image
                     src={file.previewUrl}
                     alt={file.name}
@@ -220,9 +227,10 @@ export default function UploadModal({
           <button
             type="button"
             onClick={handleUpload}
+            disabled={selectedFiles.length === 0 || isSubmitting}
             className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
           >
-            Upload
+            {isSubmitting ? "Uploading..." : "Upload"}
           </button>
         </div>
       </div>

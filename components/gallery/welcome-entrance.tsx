@@ -39,8 +39,8 @@ export default function WelcomeEntrance({
             Enter the gallery your way.
           </h1>
           <p className="mt-4 max-w-lg text-sm leading-6 text-slate-300 sm:text-base">
-            Browse freely as a guest, or sign in to unlock uploads and mock
-            favorites without leaving the gallery view.
+            Browse freely as a guest, or sign in to unlock uploads and favorites
+            without leaving the gallery view.
           </p>
 
           <div className="mt-10 grid gap-3 sm:grid-cols-3">
