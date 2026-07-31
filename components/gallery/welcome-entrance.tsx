@@ -15,7 +15,7 @@ export default function WelcomeEntrance({
 }: WelcomeEntranceProps) {
   return (
     <div
-      className={`fixed inset-0 z-[60] overflow-hidden bg-black/80 backdrop-blur-md transition duration-300 ease-out motion-reduce:duration-0 ${
+      className={`fixed inset-0 z-[60] overflow-hidden bg-black/80 backdrop-blur-md transition duration-1000 ease-out motion-reduce:duration-0 ${
         phase === "closing"
           ? "pointer-events-none translate-x-full opacity-0 motion-reduce:translate-x-0"
           : "translate-x-0 opacity-100"
