@@ -18,6 +18,11 @@ type SelectedFile = {
 };
 
 const MAX_UPLOAD_SIZE_BYTES = 15 * 1024 * 1024;
+const SUPPORTED_UPLOAD_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
 
 export default function UploadModal({
   onClose,
@@ -57,6 +62,13 @@ export default function UploadModal({
     const [file] = Array.from(files);
 
     if (!file) {
+      return;
+    }
+
+    if (!SUPPORTED_UPLOAD_MIME_TYPES.has(file.type)) {
+      setErrorMessage(
+        "Unsupported file type. Use JPEG, PNG, or WebP. iPhone HEIC photos are not supported yet.",
+      );
       return;
     }
 
@@ -158,8 +170,8 @@ export default function UploadModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-3 backdrop-blur-sm sm:p-6">
-      <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-4 shadow-lg sm:p-6">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/40 p-3 backdrop-blur-sm sm:items-center sm:p-6">
+      <div className="my-3 w-full max-w-2xl max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-lg sm:my-0 sm:max-h-[calc(100dvh-3rem)] sm:p-6">
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold text-slate-900">
@@ -193,7 +205,7 @@ export default function UploadModal({
             id="photo-upload"
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp"
             className="sr-only"
             onChange={(event) => handleFiles(event.target.files)}
           />
@@ -266,7 +278,7 @@ export default function UploadModal({
             value={draftTag}
             onChange={(event) => setDraftTag(event.target.value)}
             placeholder="Add a tag"
-            className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-slate-300"
+            className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-base text-slate-700 outline-none focus:border-slate-300 sm:text-sm"
           />
           <button
             type="button"
