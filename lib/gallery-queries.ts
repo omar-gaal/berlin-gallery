@@ -49,6 +49,7 @@ export async function getGalleryData(options?: {
   const orderedPhotos = await db
     .select({
       id: photos.id,
+      uploadedBy: photos.uploadedBy,
       originalFilename: photos.originalFilename,
       mimeType: photos.mimeType,
       width: photos.width,
@@ -109,6 +110,7 @@ export async function getGalleryData(options?: {
       mimeType: photo.mimeType,
       fileSizeBytes: photo.fileSize.toString(),
       createdAt: photo.createdAt.toISOString(),
+      uploadedByUserId: photo.uploadedBy,
     };
   });
 

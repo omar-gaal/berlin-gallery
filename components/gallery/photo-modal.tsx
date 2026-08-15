@@ -9,6 +9,10 @@ type PhotoModalProps = {
   onClose: () => void;
   isFavorite: boolean;
   onToggleFavorite: (photoId: string, trigger: HTMLButtonElement) => void;
+  canDelete: boolean;
+  isDeleting: boolean;
+  onDelete: (photoId: string) => void | Promise<void>;
+  deleteErrorMessage?: string | null;
 };
 
 export default function PhotoModal({
@@ -16,6 +20,10 @@ export default function PhotoModal({
   onClose,
   isFavorite,
   onToggleFavorite,
+  canDelete,
+  isDeleting,
+  onDelete,
+  deleteErrorMessage,
 }: PhotoModalProps) {
   const [isVisible, setIsVisible] = useState(true);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -71,6 +79,11 @@ export default function PhotoModal({
   const handleFavoriteClick = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     onToggleFavorite(photo.id, event.currentTarget);
+  };
+
+  const handleDeleteClick = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    onDelete(photo.id);
   };
 
   return (
@@ -143,6 +156,30 @@ export default function PhotoModal({
             </div>
           )}
         </div>
+
+        {canDelete || deleteErrorMessage ? (
+          <div className="border-t border-slate-200 bg-white px-3 py-3 sm:px-4">
+            {deleteErrorMessage ? (
+              <p
+                role="alert"
+                aria-live="polite"
+                className="mb-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700"
+              >
+                {deleteErrorMessage}
+              </p>
+            ) : null}
+            {canDelete ? (
+              <button
+                type="button"
+                onClick={handleDeleteClick}
+                disabled={isDeleting}
+                className="w-full rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isDeleting ? "Deleting..." : "Delete photo"}
+              </button>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </div>
   );

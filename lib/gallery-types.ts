@@ -10,6 +10,7 @@ export type GalleryPhoto = {
   mimeType: string;
   fileSizeBytes: string;
   createdAt: string;
+  uploadedByUserId: string | null;
 };
 
 export type GalleryData = {

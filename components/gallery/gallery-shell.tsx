@@ -82,6 +82,13 @@ export default function GalleryShell({
   const [favoriteOverrides, setFavoriteOverrides] = useState<
     Record<string, boolean>
   >({});
+  const [deletedPhotoIds, setDeletedPhotoIds] = useState<Record<string, true>>(
+    {},
+  );
+  const [isDeletingPhoto, setIsDeletingPhoto] = useState(false);
+  const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(
+    null,
+  );
   const headerSignInButtonRef = useRef<HTMLButtonElement | null>(null);
   const welcomeTimerRef = useRef<number | null>(null);
   const {
@@ -107,11 +114,13 @@ export default function GalleryShell({
   }, [initialPhotos]);
 
   const photosWithFavorites = useMemo<GalleryPhoto[]>(() => {
-    return initialPhotos.map((photo) => ({
-      ...photo,
-      favorite: favoriteOverrides[photo.id] ?? photo.favorite,
-    }));
-  }, [favoriteOverrides, initialPhotos]);
+    return initialPhotos
+      .filter((photo) => !deletedPhotoIds[photo.id])
+      .map((photo) => ({
+        ...photo,
+        favorite: favoriteOverrides[photo.id] ?? photo.favorite,
+      }));
+  }, [deletedPhotoIds, favoriteOverrides, initialPhotos]);
 
   const selectedPhoto = useMemo(
     () => photosWithFavorites.find((photo) => photo.id === openPhoto) ?? null,
@@ -237,6 +246,81 @@ export default function GalleryShell({
     });
   };
 
+  const handleDeletePhoto = async (photoId: string) => {
+    if (isDeletingPhoto) {
+      return;
+    }
+
+    if (!isSignedIn || !currentUser) {
+      setDeleteErrorMessage("Sign in to delete photos.");
+      return;
+    }
+
+    const photo = photosWithFavorites.find(
+      (candidate) => candidate.id === photoId,
+    );
+
+    if (!photo) {
+      setDeleteErrorMessage("Photo not found.");
+      return;
+    }
+
+    if (photo.uploadedByUserId !== currentUser.id) {
+      setDeleteErrorMessage("You can only delete photos you uploaded.");
+      return;
+    }
+
+    const confirmed = window.confirm("Delete this photo permanently?");
+
+    if (!confirmed) {
+      return;
+    }
+
+    setIsDeletingPhoto(true);
+    setDeleteErrorMessage(null);
+
+    try {
+      const response = await fetch(`/api/photos/${photoId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        let message = "Unable to delete this photo right now.";
+
+        try {
+          const payload = (await response.json()) as { error?: string };
+          if (payload.error) {
+            message = payload.error;
+          }
+        } catch {
+          // Keep fallback message when response body is unavailable.
+        }
+
+        setDeleteErrorMessage(message);
+        return;
+      }
+
+      setDeletedPhotoIds((current) => ({
+        ...current,
+        [photoId]: true,
+      }));
+      setFavoriteOverrides((current) => {
+        const next = { ...current };
+        delete next[photoId];
+        return next;
+      });
+      setOpenPhoto((current) => (current === photoId ? null : current));
+      setToastMessage("Photo deleted.");
+      window.setTimeout(() => setToastMessage(null), 2200);
+
+      startGalleryRefresh(() => {
+        router.refresh();
+      });
+    } finally {
+      setIsDeletingPhoto(false);
+    }
+  };
+
   const handleAuthSuccess = async () => {
     await refetch();
     setAuthPrompt(null);
@@ -295,7 +379,10 @@ export default function GalleryShell({
         <div className="flex-1 overflow-y-auto pb-24">
           <PhotoGrid
             photos={visiblePhotos}
-            onOpen={(photo) => setOpenPhoto(photo.id)}
+            onOpen={(photo) => {
+              setDeleteErrorMessage(null);
+              setOpenPhoto(photo.id);
+            }}
             onToggleFavorite={handleToggleFavorite}
             emptyMessage={galleryEmptyMessage}
           />
@@ -312,9 +399,20 @@ export default function GalleryShell({
       {selectedPhoto ? (
         <PhotoModal
           photo={selectedPhoto}
-          onClose={() => setOpenPhoto(null)}
+          onClose={() => {
+            setDeleteErrorMessage(null);
+            setOpenPhoto(null);
+          }}
           isFavorite={selectedPhoto.favorite}
           onToggleFavorite={handleToggleFavorite}
+          canDelete={Boolean(
+            isSignedIn &&
+            currentUser &&
+            selectedPhoto.uploadedByUserId === currentUser.id,
+          )}
+          isDeleting={isDeletingPhoto}
+          onDelete={handleDeletePhoto}
+          deleteErrorMessage={deleteErrorMessage}
         />
       ) : null}
       {isUploadOpen ? (
