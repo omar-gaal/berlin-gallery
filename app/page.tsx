@@ -2,6 +2,8 @@ import GalleryShell from "@/components/gallery/gallery-shell";
 import { getGalleryData } from "@/lib/gallery-queries";
 import type { GalleryPhoto } from "@/lib/gallery-types";
 
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   let initialPhotos: GalleryPhoto[] = [];
   let initialTags: string[] = [];
@@ -15,7 +17,8 @@ export default async function Home() {
     initialTags = galleryData.tags;
     hasMore = galleryData.hasMore;
     pageSize = galleryData.limit;
-  } catch {
+  } catch (error) {
+    console.error("Failed to load gallery data", error);
     loadError = "We could not load the gallery right now.";
   }
 
