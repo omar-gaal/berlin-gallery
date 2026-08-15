@@ -82,6 +82,7 @@ export default function GalleryShell({
   const [favoriteOverrides, setFavoriteOverrides] = useState<
     Record<string, boolean>
   >({});
+  const [sessionUploadTags, setSessionUploadTags] = useState<string[]>([]);
   const [deletedPhotoIds, setDeletedPhotoIds] = useState<Record<string, true>>(
     {},
   );
@@ -101,9 +102,13 @@ export default function GalleryShell({
   const isSignedIn = Boolean(sessionData?.session && currentUser);
   const userInitials = getUserInitials(currentUser?.name, currentUser?.email);
 
+  const uploadTags = useMemo(() => {
+    return Array.from(new Set([...initialTags, ...sessionUploadTags]));
+  }, [initialTags, sessionUploadTags]);
+
   const chips = useMemo(() => {
-    return ["All", ...Array.from(new Set(initialTags))];
-  }, [initialTags]);
+    return ["All", ...uploadTags];
+  }, [uploadTags]);
 
   const effectiveActiveChip = chips.includes(activeChip) ? activeChip : "All";
 
@@ -236,8 +241,19 @@ export default function GalleryShell({
     setIsUploadOpen(true);
   };
 
-  const handleUploadComplete = async () => {
+  const handleUploadComplete = async (uploadedTag: string) => {
     setIsUploadOpen(false);
+
+    if (uploadedTag.trim()) {
+      setSessionUploadTags((current) => {
+        if (current.includes(uploadedTag)) {
+          return current;
+        }
+
+        return [...current, uploadedTag];
+      });
+    }
+
     setToastMessage("Upload complete. Refreshing gallery...");
     window.setTimeout(() => setToastMessage(null), 2200);
 
@@ -419,6 +435,7 @@ export default function GalleryShell({
         <UploadModal
           onClose={() => setIsUploadOpen(false)}
           onUploadComplete={handleUploadComplete}
+          availableTags={uploadTags}
         />
       ) : null}
       {toastMessage ? (

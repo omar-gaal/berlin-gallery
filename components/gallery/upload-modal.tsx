@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-
-const availableTags = ["Nature", "City", "Travel", "People", "Food"];
 
 type UploadModalProps = {
   onClose: () => void;
-  onUploadComplete: () => void | Promise<void>;
+  onUploadComplete: (uploadedTag: string) => void | Promise<void>;
+  availableTags: string[];
 };
 
 type SelectedFile = {
@@ -27,6 +26,7 @@ const SUPPORTED_UPLOAD_MIME_TYPES = new Set([
 export default function UploadModal({
   onClose,
   onUploadComplete,
+  availableTags,
 }: UploadModalProps) {
   const [selectedFile, setSelectedFile] = useState<SelectedFile | null>(null);
   const [selectedTag, setSelectedTag] = useState<string>("");
@@ -53,6 +53,18 @@ export default function UploadModal({
       }
     };
   }, [selectedFile]);
+
+  const tagOptions = useMemo(() => {
+    const normalized = availableTags
+      .map((tag) => tag.trim())
+      .filter((tag) => tag.length > 0);
+
+    if (selectedTag.trim()) {
+      normalized.push(selectedTag.trim());
+    }
+
+    return Array.from(new Set(normalized));
+  }, [availableTags, selectedTag]);
 
   const handleFiles = (files: FileList | null) => {
     if (!files || files.length === 0) {
@@ -162,7 +174,7 @@ export default function UploadModal({
       setSelectedFile(null);
       setSelectedTag("");
       setDraftTag("");
-      await onUploadComplete();
+      await onUploadComplete(selectedTag.trim());
       onClose();
     } finally {
       setIsSubmitting(false);
@@ -252,7 +264,7 @@ export default function UploadModal({
         <div className="mt-5">
           <p className="text-sm font-medium text-slate-700">Tags</p>
           <div className="mt-2 flex flex-wrap gap-2">
-            {availableTags.map((tag) => {
+            {tagOptions.map((tag) => {
               const active = selectedTag === tag;
               return (
                 <button
